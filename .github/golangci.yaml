@@ -103,7 +103,7 @@ linters:
   exclusions:
     generated: lax
     paths:
-      - db/sql/gen/
+      - storage/sql/gen/
     presets:
       - comments
       - common-false-positives
