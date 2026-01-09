@@ -1,0 +1,15 @@
+# MacOS Leftovers
+.DS_Store
+
+# Editor Leftovers
+.vscode
+.idea
+
+# Build Leftovers
+build/*
+
+# Config leftovers
+*.toml
+
+# ENV config
+.env
