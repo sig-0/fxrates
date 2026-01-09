@@ -5,8 +5,6 @@ run:
   modules-download-mode: readonly
   tests: true
   allow-parallel-runners: false
-  skip-dirs:
-    - db/sql/gen
 output:
   path-prefix: ""
 linters:
@@ -104,7 +102,8 @@ linters:
         - G101
   exclusions:
     generated: lax
-    path: db/sql/gen/
+    paths:
+      - db/sql/gen/
     presets:
       - comments
       - common-false-positives
@@ -128,6 +127,4 @@ formatters:
     gofmt:
       simplify: true
     goimports:
-      local-prefixes: github.com/sig-0/fxrates
-      exclude:
-        - db/sql/gen
+      local-prefixes: [ "github.com/sig-0/fxrates" ]
