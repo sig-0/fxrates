@@ -1,0 +1,289 @@
+openapi: 3.0.3
+info:
+  title: fxrates
+  version: 0.1.0
+  description: Simple exchange rate API.
+
+tags:
+  - name: Health
+  - name: Rates
+  - name: Meta
+
+paths:
+  /health:
+    get:
+      tags: [ Health ]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: ok
+
+  /v1/rates/{base}:
+    get:
+      tags: [ Rates ]
+      summary: Get rates for a base currency effective from a specific time
+      description: >
+        Returns the latest available rates with the given base (as-of `as_of`).
+        If `source` and/or `type` are omitted, results may include multiple sources/types.
+      parameters:
+        - $ref: "#/components/parameters/Base"
+        - $ref: "#/components/parameters/AsOf"
+        - $ref: "#/components/parameters/Source"
+        - $ref: "#/components/parameters/RateType"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Paginated results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageExchangeRate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/rates/{base}/{target}:
+    get:
+      tags: [ Rates ]
+      summary: Get rates for a base/target pair effective from a specific time
+      description: >
+        Returns the latest available rates for the pair (as-of `as_of`).
+        If `source` and/or `type` are omitted, results may include multiple sources/types.
+      parameters:
+        - $ref: "#/components/parameters/Base"
+        - $ref: "#/components/parameters/Target"
+        - $ref: "#/components/parameters/AsOf"
+        - $ref: "#/components/parameters/Source"
+        - $ref: "#/components/parameters/RateType"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Paginated results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PageExchangeRate"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/sources:
+    get:
+      tags: [ Meta ]
+      summary: List known sources
+      responses:
+        "200":
+          description: Sources
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultsSource"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /v1/currencies:
+    get:
+      tags: [ Meta ]
+      summary: List known currencies
+      responses:
+        "200":
+          description: Currencies
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResultsCurrency"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  parameters:
+    Base:
+      name: base
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Currency"
+      example: USD
+
+    Target:
+      name: target
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Currency"
+      example: VES
+
+    AsOf:
+      name: as_of
+      in: query
+      required: false
+      description: RFC3339 timestamp; defaults to now.
+      schema:
+        type: string
+        format: date-time
+      example: "2026-01-13T00:00:00Z"
+
+    Source:
+      name: source
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/Source"
+      example: BCV
+
+    RateType:
+      name: type
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/RateType"
+      example: MID
+
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Max items to return; defaults to 100 (server may clamp).
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+      example: 100
+
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Offset into result set; defaults to 0.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+      example: 0
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: invalid as_of (must be RFC3339)
+
+    InternalError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            error: internal server error
+
+  schemas:
+    Currency:
+      type: string
+      pattern: "^[A-Z]{3}$"
+      description: ISO 4217 currency code.
+      example: USD
+
+    RateType:
+      type: string
+      enum: [ MID, BUY, SELL ]
+      example: MID
+
+    Source:
+      type: string
+      maxLength: 50
+      example: BCV
+
+    ExchangeRate:
+      type: object
+      required: [ as_of, fetched_at, base, target, rate_type, source, rate ]
+      properties:
+        as_of:
+          type: string
+          format: date-time
+        fetched_at:
+          type: string
+          format: date-time
+        base:
+          $ref: "#/components/schemas/Currency"
+        target:
+          $ref: "#/components/schemas/Currency"
+        rate_type:
+          $ref: "#/components/schemas/RateType"
+        source:
+          $ref: "#/components/schemas/Source"
+        rate:
+          type: number
+          format: double
+          description: Rate rounded to 4 decimal places.
+      example:
+        as_of: "2026-01-13T00:00:00Z"
+        fetched_at: "2026-01-13T00:02:10Z"
+        base: USD
+        target: VES
+        rate_type: MID
+        source: BCV
+        rate: 330.3751
+
+    PageExchangeRate:
+      type: object
+      required: [ results, total ]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExchangeRate"
+        total:
+          type: integer
+          format: int64
+      example:
+        results:
+          - as_of: "2026-01-13T00:00:00Z"
+            fetched_at: "2026-01-13T00:02:10Z"
+            base: USD
+            target: VES
+            rate_type: MID
+            source: BCV
+            rate: 330.3751
+        total: 1
+
+    ResultsSource:
+      type: object
+      required: [ results ]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Source"
+      example:
+        results: [ BCV ]
+
+    ResultsCurrency:
+      type: object
+      required: [ results ]
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Currency"
+      example:
+        results: [ USD, EUR, VES ]
+
+    ErrorResponse:
+      type: object
+      required: [ error ]
+      properties:
+        error:
+          type: string

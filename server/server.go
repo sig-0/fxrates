@@ -78,7 +78,17 @@ func New(storage storage.Storage, opts ...Option) (*Server, error) {
 		writer.WriteHeader(http.StatusOK)
 	})
 
-	// TODO add standard handler endpoints
+	// Register the OpenAPI spec
+	s.mux.Get("/openapi.yaml", s.OpenAPI)
+	s.mux.Get("/", s.Redoc)
+
+	// Register the default routes
+	s.mux.Route("/v1", func(r chi.Router) {
+		r.Get("/rates/{base}/{target}", s.RatesForPair)
+		r.Get("/rates/{base}", s.RatesForBase)
+		r.Get("/sources", s.Sources)
+		r.Get("/currencies", s.Currencies)
+	})
 
 	return s, nil
 }
