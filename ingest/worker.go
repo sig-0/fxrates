@@ -30,9 +30,9 @@ type workerInfo struct {
 
 // workerResponse is the provider routine response
 type workerResponse struct {
-	error      error               // encountered error, if any
-	rate       *types.ExchangeRate // the fetched exchange rate
-	providerID xid.ID              // the provider ID
+	error      error                 // encountered error, if any
+	rates      []*types.ExchangeRate // the fetched exchange rates
+	providerID xid.ID                // the provider ID
 }
 
 // handleJob fetches using the provider
@@ -40,11 +40,11 @@ func handleJob(
 	ctx context.Context,
 	info *workerInfo,
 ) {
-	rate, err := info.provider.Fetch(ctx)
+	rates, err := info.provider.Fetch(ctx)
 
 	response := &workerResponse{
 		error:      err,
-		rate:       rate,
+		rates:      rates,
 		providerID: info.providerID,
 	}
 

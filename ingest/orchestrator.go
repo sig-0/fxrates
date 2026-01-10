@@ -21,12 +21,14 @@ var (
 
 // Orchestrator is the main job scheduler for registered providers
 type Orchestrator struct {
-	storage             storage.Storage
-	logger              *slog.Logger
+	storage storage.Storage
+	logger  *slog.Logger
+
 	registeredProviders sync.Map
-	q                   iq.Queue[scheduledIngest]
-	queryInterval       time.Duration
-	qMux                sync.Mutex
+
+	q             iq.Queue[scheduledIngest]
+	queryInterval time.Duration
+	qMux          sync.Mutex
 }
 
 // New creates a new Orchestrator instance
@@ -159,17 +161,32 @@ func (o *Orchestrator) Start(ctx context.Context) error {
 				continue
 			}
 
-			// TODO overkill?
-			saveCtx, cancelFn := context.WithTimeout(ctx, time.Second*10)
+			// Save the provider-fetched rates
+			for _, rate := range response.rates {
+				// TODO overkill?
+				saveCtx, cancelFn := context.WithTimeout(ctx, time.Second*10)
 
-			if err := o.storage.SaveExchangeRate(saveCtx, response.rate); err != nil {
-				o.logger.Error(
-					"unable to save exchange rate",
-					"base", response.rate.Base,
-					"target", response.rate.Target,
-					"source", response.rate.Source,
-					"err", response.error.Error(),
+				if err := o.storage.SaveExchangeRate(saveCtx, rate); err != nil {
+					o.logger.Error(
+						"unable to save exchange rate",
+						"base", rate.Base,
+						"target", rate.Target,
+						"source", rate.Source,
+						"err", err,
+					)
+				}
+
+				o.logger.Info(
+					"saved exchange rate",
+					"base", rate.Base,
+					"target", rate.Target,
+					"source", rate.Source,
+					"rate", rate.Rate,
+					"rate_type", rate.RateType,
+					"effective_date", rate.AsOf.String(),
 				)
+
+				cancelFn()
 			}
 
 			// Schedule a new ingest for this provider
@@ -178,8 +195,6 @@ func (o *Orchestrator) Start(ctx context.Context) error {
 				response.providerID,
 				rp,
 			)
-
-			cancelFn()
 		}
 	}
 }

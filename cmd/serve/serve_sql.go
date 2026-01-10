@@ -16,6 +16,8 @@ import (
 	"github.com/peterbourgon/ff/v3/ffcli"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sig-0/fxrates/ingest"
+
 	"github.com/sig-0/fxrates/cmd/env"
 	"github.com/sig-0/fxrates/server"
 	"github.com/sig-0/fxrates/server/config"
@@ -104,9 +106,20 @@ func (c *serveSQLCfg) exec(ctx context.Context, _ []string) error {
 
 	logger.Info("DB ping success")
 
+	// Create an SQL store
+	store := sql.NewStorage(gen.New(pool))
+
+	// Create the ingestion service
+	orchestrator := ingest.New(store, ingest.WithLogger(logger))
+	for _, provider := range defaultProviders() {
+		if err = orchestrator.Register(provider); err != nil {
+			return fmt.Errorf("unable to register provider: %w", err)
+		}
+	}
+
 	// Create the server instance
 	s, err := server.New(
-		sql.NewStorage(gen.New(pool)), // SQL adapter
+		store,
 		server.WithLogger(logger),
 		server.WithConfig(c.rootCfg.config),
 	)
@@ -129,6 +142,11 @@ func (c *serveSQLCfg) exec(ctx context.Context, _ []string) error {
 	// Start the HTTP server
 	group.Go(func() error {
 		return s.Serve(gCtx)
+	})
+
+	// Start the ingestion service
+	group.Go(func() error {
+		return orchestrator.Start(gCtx)
 	})
 
 	return group.Wait()

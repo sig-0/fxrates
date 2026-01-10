@@ -15,6 +15,6 @@ type Provider interface {
 	// Interval returns the interval at which the provider should be called
 	Interval() time.Duration
 
-	// Fetch is the provider's main fetch job, yielding an exchange rate data point
-	Fetch(context.Context) (*types.ExchangeRate, error)
+	// Fetch is the provider's main fetch job, yielding exchange rate data points
+	Fetch(context.Context) ([]*types.ExchangeRate, error)
 }
