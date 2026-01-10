@@ -8,7 +8,7 @@ import (
 	"github.com/pelletier/go-toml"
 )
 
-const DefaultListenAddress = "0.0.0.0:8545"
+const DefaultListenAddress = "0.0.0.0:8080"
 
 var ErrInvalidListenAddress = errors.New("invalid listen address")
 
