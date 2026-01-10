@@ -29,18 +29,18 @@ type Server struct {
 	logger *slog.Logger
 	config *config.Config
 
-	db storage.Storage
+	storage storage.Storage
 
 	mux *chi.Mux
 }
 
 // New creates a new server instance
-func New(db storage.Storage, opts ...Option) (*Server, error) {
+func New(storage storage.Storage, opts ...Option) (*Server, error) {
 	s := &Server{
-		logger: noopLogger,
-		db:     db,
-		config: config.DefaultConfig(),
-		mux:    chi.NewMux(),
+		logger:  noopLogger,
+		storage: storage,
+		config:  config.DefaultConfig(),
+		mux:     chi.NewMux(),
 	}
 
 	// Apply the options

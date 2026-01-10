@@ -10,6 +10,8 @@ require (
 	github.com/pelletier/go-toml v1.9.5
 	github.com/peterbourgon/ff/v3 v3.4.0
 	github.com/rs/cors v1.11.1
+	github.com/rs/xid v1.6.0
+	github.com/sig-0/iq v0.1.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/sync v0.19.0
 )
