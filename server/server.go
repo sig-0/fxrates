@@ -15,6 +15,8 @@ import (
 	"github.com/rs/cors"
 	"golang.org/x/sync/errgroup"
 
+	graph "github.com/sig-0/fxrates/server/graph"
+
 	"github.com/sig-0/fxrates/storage"
 
 	"github.com/sig-0/fxrates/server/config"
@@ -89,6 +91,9 @@ func New(storage storage.Storage, opts ...Option) (*Server, error) {
 		r.Get("/sources", s.Sources)
 		r.Get("/currencies", s.Currencies)
 	})
+
+	// Register GraphQL
+	graph.Setup(s.storage, s.mux)
 
 	return s, nil
 }

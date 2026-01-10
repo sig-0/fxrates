@@ -1,0 +1,36 @@
+type Query {
+    """
+    Returns exchange rates effective from a specific point in time.
+    If `as_of` is omitted, the server uses the current time (UTC).
+    If `target`, `source`, or `type` are omitted, results may include multiple values for those fields.
+    Results are paginated with `limit` and `offset`.
+    """
+    rates(
+        """Base currency (ISO 4217), e.g. "USD"."""
+        base: String!
+
+        """Target currency (ISO 4217), e.g. "VES"."""
+        target: String
+
+        """As-of cutoff timestamp (RFC3339); returns the latest rate at or before this time."""
+        as_of: Time
+
+        """Optional source filter, e.g. "BCV"."""
+        source: String
+
+        """Optional rate type filter (MID/BUY/SELL)."""
+        type: RateType
+
+        """Maximum number of results to return (server applies defaults/clamps)."""
+        limit: Int
+
+        """Number of results to skip (server applies defaults/clamps)."""
+        offset: Int
+    ): ExchangeRatePage!
+
+    """Lists all distinct sources currently present in storage."""
+    sources: [String!]!
+
+    """Lists all distinct currencies currently present in storage."""
+    currencies: [String!]!
+}

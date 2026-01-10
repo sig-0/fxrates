@@ -18,3 +18,7 @@ gofumpt:
 fixalign:
 	go install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
 	fieldalignment -fix $(filter-out $@,$(MAKECMDGOALS)) # the full package name (not path!)
+
+.PHONY: graphqlgen
+graphqlgen:
+	go run github.com/99designs/gqlgen generate

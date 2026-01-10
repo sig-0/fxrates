@@ -1,0 +1,56 @@
+"""
+RFC3339 timestamp.
+The server treats all timestamps as UTC for storage and comparison.
+"""
+scalar Time
+
+"""
+Classifies the kind of rate being reported.
+"""
+enum RateType {
+    """Mid-market rate."""
+    MID
+
+    """Buy rate (what the provider/bank buys at)."""
+    BUY
+
+    """Sell rate (what the provider/bank sells at)."""
+    SELL
+}
+
+"""
+A single observed exchange rate data point.
+"""
+type ExchangeRate {
+    """Effective date/time for which this rate applies."""
+    as_of: Time!
+
+    """Time when this record was fetched/observed by the system."""
+    fetched_at: Time!
+
+    """Base currency (ISO 4217), e.g. "USD"."""
+    base: String!
+
+    """Target currency (ISO 4217), e.g. "VES"."""
+    target: String!
+
+    """Rate classification (MID/BUY/SELL)."""
+    rate_type: RateType!
+
+    """Provider/source identifier, e.g. "BCV"."""
+    source: String!
+
+    """Quoted rate from base -> target."""
+    rate: Float!
+}
+
+"""
+A paginated collection of exchange rates.
+"""
+type ExchangeRatePage {
+    """Current page of results."""
+    results: [ExchangeRate!]!
+
+    """Total number of matching results before pagination."""
+    total: Int!
+}
