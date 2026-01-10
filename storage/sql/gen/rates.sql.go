@@ -11,76 +11,38 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const rateAsOf = `-- name: RateAsOf :one
-SELECT id, base, target, rate, rate_type, source, as_of, fetched_at
-FROM exchange_rates
-WHERE base = $1
-  AND target = $2
-  AND source = $3
-  AND rate_type = $4
-  AND as_of <= $5
-ORDER BY as_of DESC
-LIMIT 1
+const rateAsOf = `-- name: RateAsOf :many
+WITH latest AS (
+  SELECT DISTINCT ON (target, source, rate_type)
+    id, base, target, rate, rate_type, source, as_of, fetched_at
+  FROM exchange_rates
+  WHERE base = $3
+    AND ($4::text IS NULL OR target = $4::text)
+    AND ($5::text IS NULL OR source = $5::text)
+    AND ($6::text IS NULL OR rate_type = $6::text)
+    AND as_of <= $7
+  ORDER BY target, source, rate_type, as_of DESC
+)
+SELECT
+  latest.id, latest.base, latest.target, latest.rate, latest.rate_type, latest.source, latest.as_of, latest.fetched_at,
+  COUNT(*) OVER()::bigint AS total
+FROM latest
+ORDER BY target, source, rate_type
+LIMIT LEAST($2::int, 500)
+OFFSET $1::bigint
 `
 
 type RateAsOfParams struct {
-	Base     string
-	Target   string
-	Source   string
-	RateType string
-	AsOf     pgtype.Timestamptz
-}
-
-func (q *Queries) RateAsOf(ctx context.Context, arg RateAsOfParams) (ExchangeRate, error) {
-	row := q.db.QueryRow(ctx, rateAsOf,
-		arg.Base,
-		arg.Target,
-		arg.Source,
-		arg.RateType,
-		arg.AsOf,
-	)
-	var i ExchangeRate
-	err := row.Scan(
-		&i.ID,
-		&i.Base,
-		&i.Target,
-		&i.Rate,
-		&i.RateType,
-		&i.Source,
-		&i.AsOf,
-		&i.FetchedAt,
-	)
-	return i, err
-}
-
-const ratesInRange = `-- name: RatesInRange :many
-SELECT
-  exchange_rates.id, exchange_rates.base, exchange_rates.target, exchange_rates.rate, exchange_rates.rate_type, exchange_rates.source, exchange_rates.as_of, exchange_rates.fetched_at,
-  COUNT(*) OVER()::bigint AS total
-FROM exchange_rates
-WHERE base = $1
-  AND target = $2
-  AND source = $3
-  AND rate_type = $4
-  AND as_of >= $5
-  AND as_of <= $6
-ORDER BY as_of ASC
-LIMIT $7
-OFFSET $8::bigint
-`
-
-type RatesInRangeParams struct {
-	Base     string
-	Target   string
-	Source   string
-	RateType string
-	AsOf     pgtype.Timestamptz
-	AsOf_2   pgtype.Timestamptz
+	Offset   int64
 	Limit    int32
-	Column8  int64
+	Base     string
+	Target   pgtype.Text
+	Source   pgtype.Text
+	RateType pgtype.Text
+	AsOf     pgtype.Timestamptz
 }
 
-type RatesInRangeRow struct {
+type RateAsOfRow struct {
 	ID        int64
 	Base      string
 	Target    string
@@ -92,24 +54,23 @@ type RatesInRangeRow struct {
 	Total     int64
 }
 
-func (q *Queries) RatesInRange(ctx context.Context, arg RatesInRangeParams) ([]RatesInRangeRow, error) {
-	rows, err := q.db.Query(ctx, ratesInRange,
+func (q *Queries) RateAsOf(ctx context.Context, arg RateAsOfParams) ([]RateAsOfRow, error) {
+	rows, err := q.db.Query(ctx, rateAsOf,
+		arg.Offset,
+		arg.Limit,
 		arg.Base,
 		arg.Target,
 		arg.Source,
 		arg.RateType,
 		arg.AsOf,
-		arg.AsOf_2,
-		arg.Limit,
-		arg.Column8,
 	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []RatesInRangeRow
+	var items []RateAsOfRow
 	for rows.Next() {
-		var i RatesInRangeRow
+		var i RateAsOfRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Base,

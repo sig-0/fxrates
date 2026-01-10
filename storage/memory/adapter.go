@@ -50,23 +50,52 @@ func (s *Storage) RateAsOf(
 	_ context.Context,
 	query *types.RateQuery,
 	asOf time.Time,
-) (*types.ExchangeRate, error) {
+) (*types.Page[*types.ExchangeRate], error) {
+	cutoff := asOf.UTC()
+	base := query.Base.String()
+
 	var (
-		cutoff   = asOf.UTC()
-		base     = query.Base.String()
-		target   = query.Target.String()
-		source   = query.Source.String()
-		rateType = query.RateType.String()
+		target, source, rateType      string
+		hasTarget, hasSource, hasType bool
 	)
 
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	if query.Target != nil {
+		target = query.Target.String()
+		hasTarget = true
+	}
 
-	var best *types.ExchangeRate
+	if query.Source != nil {
+		source = query.Source.String()
+		hasSource = true
+	}
+
+	if query.RateType != nil {
+		rateType = query.RateType.String()
+		hasType = true
+	}
+
+	type bucket struct {
+		target, source, rateType string
+	}
+
+	s.mu.RLock()
+
+	bestByBucket := make(map[bucket]types.ExchangeRate)
 
 	for _, v := range s.data {
-		if v.Base.String() != base || v.Target.String() != target ||
-			v.Source.String() != source || v.RateType.String() != rateType {
+		if v.Base.String() != base {
+			continue
+		}
+
+		if hasTarget && v.Target.String() != target {
+			continue
+		}
+
+		if hasSource && v.Source.String() != source {
+			continue
+		}
+
+		if hasType && v.RateType.String() != rateType {
 			continue
 		}
 
@@ -74,67 +103,41 @@ func (s *Storage) RateAsOf(
 			continue
 		}
 
-		if best == nil ||
-			v.AsOf.After(best.AsOf) ||
-			(v.AsOf.Equal(best.AsOf) && v.FetchedAt.After(best.FetchedAt)) {
-			tmp := v
-			best = &tmp
-		}
-	}
-
-	if best == nil {
-		return nil, nil //nolint:nilnil // valid case
-	}
-
-	return best, nil
-}
-
-func (s *Storage) RatesInRange(
-	_ context.Context,
-	query *types.RateQuery,
-	from time.Time,
-	to time.Time,
-	limit int32,
-	offset int64,
-) (*types.Page[*types.ExchangeRate], error) {
-	var (
-		start    = from.UTC()
-		end      = to.UTC()
-		base     = query.Base.String()
-		target   = query.Target.String()
-		source   = query.Source.String()
-		rateType = query.RateType.String()
-	)
-
-	s.mu.RLock()
-
-	matches := make([]types.ExchangeRate, 0)
-
-	for _, v := range s.data {
-		if v.Base.String() != base || v.Target.String() != target ||
-			v.Source.String() != source || v.RateType.String() != rateType {
-			continue
+		b := bucket{
+			target:   v.Target.String(),
+			source:   v.Source.String(),
+			rateType: v.RateType.String(),
 		}
 
-		if v.AsOf.Before(start) || v.AsOf.After(end) {
-			continue
+		cur, ok := bestByBucket[b]
+		if !ok ||
+			v.AsOf.After(cur.AsOf) ||
+			(v.AsOf.Equal(cur.AsOf) && v.FetchedAt.After(cur.FetchedAt)) {
+			bestByBucket[b] = v
 		}
-
-		matches = append(matches, v)
 	}
 
 	s.mu.RUnlock()
 
-	sort.Slice(matches, func(i, j int) bool {
-		if matches[i].AsOf.Equal(matches[j].AsOf) {
-			return matches[i].FetchedAt.Before(matches[j].FetchedAt)
+	out := make([]*types.ExchangeRate, 0, len(bestByBucket))
+	for _, v := range bestByBucket {
+		cp := v
+		out = append(out, &cp)
+	}
+
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Target != out[j].Target {
+			return out[i].Target.String() < out[j].Target.String()
 		}
 
-		return matches[i].AsOf.Before(matches[j].AsOf)
+		if out[i].Source != out[j].Source {
+			return out[i].Source.String() < out[j].Source.String()
+		}
+
+		return out[i].RateType.String() < out[j].RateType.String()
 	})
 
-	total := int64(len(matches))
-
+	total := int64(len(out))
 	if total == 0 {
 		return &types.Page[*types.ExchangeRate]{
 			Results: nil,
@@ -142,33 +145,32 @@ func (s *Storage) RatesInRange(
 		}, nil
 	}
 
-	if offset >= total {
+	lim := query.Limit
+	if lim == 0 {
+		lim = 100
+	}
+
+	if lim > 500 {
+		lim = 500
+	}
+
+	off := query.Offset
+	if off > total {
 		return &types.Page[*types.ExchangeRate]{
 			Results: nil,
 			Total:   total,
 		}, nil
 	}
 
-	var (
-		startIdx = int(offset)
-		endIdx   = len(matches)
-	)
+	start := int(off)
+	end := start + int(lim)
 
-	if limit > 0 {
-		if cand := startIdx + int(limit); cand < endIdx {
-			endIdx = cand
-		}
-	}
-
-	items := make([]*types.ExchangeRate, 0, endIdx-startIdx)
-
-	for i := startIdx; i < endIdx; i++ {
-		cp := matches[i]
-		items = append(items, &cp)
+	if end > len(out) {
+		end = len(out)
 	}
 
 	return &types.Page[*types.ExchangeRate]{
-		Results: items,
+		Results: out[start:end],
 		Total:   total,
 	}, nil
 }

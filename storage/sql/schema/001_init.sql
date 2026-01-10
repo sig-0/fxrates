@@ -16,8 +16,5 @@ CREATE TABLE exchange_rates (
     UNIQUE (base, target, rate_type, source, as_of)
 );
 
-CREATE INDEX exchange_rates_lookup_idx
-  ON exchange_rates (base, target, rate_type, source, as_of DESC);
-
-CREATE INDEX exchange_rates_base_latest_idx
-  ON exchange_rates (base, rate_type, source, target, as_of DESC);
+CREATE INDEX exchange_rates_asof_latest_idx
+  ON exchange_rates (base, target, source, rate_type, as_of DESC);

@@ -50,47 +50,19 @@ func (s *Storage) RateAsOf(
 	ctx context.Context,
 	query *types.RateQuery,
 	t time.Time,
-) (*types.ExchangeRate, error) {
-	arg := pgStorage.RateAsOfParams{
-		Base:     query.Base.String(),
-		Target:   query.Target.String(),
-		Source:   query.Source.String(),
-		RateType: query.RateType.String(),
-		AsOf:     timeToTimestampz(t),
-	}
-
-	result, err := s.queries.RateAsOf(ctx, arg)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil //nolint:nilnil // valid case
-		}
-
-		return nil, fmt.Errorf("unable to fetch rate: %w", err)
-	}
-
-	return parseExchangeRate(result), nil
-}
-
-func (s *Storage) RatesInRange(
-	ctx context.Context,
-	query *types.RateQuery,
-	from time.Time,
-	to time.Time,
-	limit int32,
-	offset int64,
 ) (*types.Page[*types.ExchangeRate], error) {
-	arg := pgStorage.RatesInRangeParams{
-		Base:     query.Base.String(),
-		Target:   query.Target.String(),
-		Source:   query.Source.String(),
-		RateType: query.RateType.String(),
-		AsOf:     timeToTimestampz(from),
-		AsOf_2:   timeToTimestampz(to),
-		Limit:    limit,
-		Column8:  offset,
+	arg := pgStorage.RateAsOfParams{
+		Base:   query.Base.String(),
+		AsOf:   timeToTimestampz(t),
+		Limit:  query.Limit,
+		Offset: query.Offset,
+
+		Target:   stringToText(query.Target),
+		Source:   stringToText(query.Source),
+		RateType: stringToText(query.RateType),
 	}
 
-	results, err := s.queries.RatesInRange(ctx, arg)
+	rows, err := s.queries.RateAsOf(ctx, arg)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &types.Page[*types.ExchangeRate]{
@@ -102,33 +74,32 @@ func (s *Storage) RatesInRange(
 		return nil, fmt.Errorf("unable to fetch rates: %w", err)
 	}
 
-	if len(results) == 0 {
+	if len(rows) == 0 {
 		return &types.Page[*types.ExchangeRate]{
 			Results: nil,
 			Total:   0,
 		}, nil // valid case
 	}
 
-	items := make([]*types.ExchangeRate, 0, len(results))
-
-	for i := range results {
+	out := make([]*types.ExchangeRate, 0, len(rows))
+	for i := range rows {
 		pgRate := pgStorage.ExchangeRate{
-			ID:        results[i].ID,
-			Base:      results[i].Base,
-			Target:    results[i].Target,
-			Rate:      results[i].Rate,
-			RateType:  results[i].RateType,
-			Source:    results[i].Source,
-			AsOf:      results[i].AsOf,
-			FetchedAt: results[i].FetchedAt,
+			ID:        rows[i].ID,
+			Base:      rows[i].Base,
+			Target:    rows[i].Target,
+			Rate:      rows[i].Rate,
+			RateType:  rows[i].RateType,
+			Source:    rows[i].Source,
+			AsOf:      rows[i].AsOf,
+			FetchedAt: rows[i].FetchedAt,
 		}
 
-		items = append(items, parseExchangeRate(pgRate))
+		out = append(out, parseExchangeRate(pgRate))
 	}
 
 	return &types.Page[*types.ExchangeRate]{
-		Results: items,
-		Total:   results[0].Total,
+		Results: out,
+		Total:   rows[0].Total,
 	}, nil
 }
 
@@ -235,4 +206,18 @@ func timestampzToTime(ts pgtype.Timestamptz) time.Time {
 	}
 
 	return ts.Time
+}
+
+// stringToText converts the given string value to postgres text
+func stringToText(value fmt.Stringer) pgtype.Text {
+	if value == nil {
+		return pgtype.Text{
+			Valid: false, // NULL
+		}
+	}
+
+	return pgtype.Text{
+		String: value.String(),
+		Valid:  true,
+	}
 }

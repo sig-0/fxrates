@@ -56,10 +56,12 @@ type Pair struct {
 }
 
 type RateQuery struct {
-	Base     Currency `json:"base"`
-	Target   Currency `json:"target"`
-	RateType RateType `json:"rate_type"`
-	Source   Source   `json:"source"`
+	Target   *Currency `json:"target"`
+	RateType *RateType `json:"rate_type"`
+	Source   *Source   `json:"source"`
+	Base     Currency  `json:"base"`
+	Offset   int64     `json:"offset"`
+	Limit    int32     `json:"limit"`
 }
 
 // Page wraps the results for pagination
