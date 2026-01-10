@@ -1,0 +1,18 @@
+# MacOS leftovers
+**/.DS_Store
+
+# Editor leftovers
+**/.vscode
+**/.idea
+
+# Build leftovers
+**/build/*
+
+# Config leftovers
+**/*.toml
+
+# ENV config
+**/.env
+
+# Fly.io leftovers
+fly.toml

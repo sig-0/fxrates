@@ -1,0 +1,6 @@
+FROM scratch
+
+COPY server /
+ENTRYPOINT [ "/server" ]
+
+CMD [ "serve", "sql" ]
