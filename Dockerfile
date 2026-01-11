@@ -22,6 +22,12 @@ FROM debian:bookworm-slim
 
 WORKDIR /app
 
+# Install CA bundle (needed for TLS)
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && update-ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
 # Only the binary
 COPY --from=build /build/fxrates /app/fxrates
 
