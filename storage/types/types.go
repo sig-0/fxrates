@@ -1,4 +1,3 @@
-//nolint:revive // this is acceptable
 package types
 
 import "time"

@@ -100,6 +100,10 @@ linters:
     gosec:
       excludes:
         - G101
+    revive:
+      rules:
+        - name: blank-imports
+          disabled: true
   exclusions:
     generated: lax
     paths:
