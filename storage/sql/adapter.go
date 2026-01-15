@@ -57,9 +57,9 @@ func (s *Storage) RateAsOf(
 		Limit:  query.Limit,
 		Offset: query.Offset,
 
-		Target:   stringToText(query.Target),
-		Source:   stringToText(query.Source),
-		RateType: stringToText(query.RateType),
+		Target:   stringArgToText(query.Target),
+		Source:   stringArgToText(query.Source),
+		RateType: stringArgToText(query.RateType),
 	}
 
 	rows, err := s.queries.RateAsOf(ctx, arg)
@@ -208,16 +208,16 @@ func timestampzToTime(ts pgtype.Timestamptz) time.Time {
 	return ts.Time
 }
 
-// stringToText converts the given string value to postgres text
-func stringToText(value fmt.Stringer) pgtype.Text {
-	if value == nil {
+// stringArgToText converts the given string value to postgres text
+func stringArgToText[T ~string](p *T) pgtype.Text {
+	if p == nil {
 		return pgtype.Text{
-			Valid: false, // NULL
+			Valid: false,
 		}
 	}
 
 	return pgtype.Text{
-		String: value.String(),
+		String: string(*p),
 		Valid:  true,
 	}
 }
