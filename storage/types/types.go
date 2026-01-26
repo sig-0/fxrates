@@ -5,12 +5,13 @@ import "time"
 type Currency string
 
 const (
-	CurrencyUSD Currency = "USD"
-	CurrencyEUR Currency = "EUR"
-	CurrencyCNY Currency = "CNY"
-	CurrencyTRY Currency = "TRY"
-	CurrencyRUB Currency = "RUB"
-	CurrencyVES Currency = "VES"
+	CurrencyUSD  Currency = "USD"
+	CurrencyEUR  Currency = "EUR"
+	CurrencyCNY  Currency = "CNY"
+	CurrencyTRY  Currency = "TRY"
+	CurrencyRUB  Currency = "RUB"
+	CurrencyVES  Currency = "VES"
+	CurrencyUSDT Currency = "USDT"
 )
 
 func (c Currency) String() string {
