@@ -97,7 +97,8 @@ INSERT INTO exchange_rates (
   base, target, rate, rate_type, source, as_of, fetched_at
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
-)
+) ON CONFLICT (base, target, rate_type, source, as_of)
+DO NOTHING
 `
 
 type SaveExchangeRateParams struct {

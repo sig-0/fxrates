@@ -48,7 +48,9 @@ func (p *BCVProvider) Name() string {
 }
 
 func (p *BCVProvider) Interval() time.Duration {
-	return time.Hour * 24 // the rate is updated daily
+	// the rate is updated daily, but we recheck frequently,
+	// as the service can be reset at random times
+	return time.Hour * 3
 }
 
 func (p *BCVProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) {
