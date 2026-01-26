@@ -192,8 +192,8 @@ components:
   schemas:
     Currency:
       type: string
-      pattern: "^[A-Z]{3}$"
-      description: ISO 4217 currency code.
+      pattern: "^[A-Z]{3,4}$"
+      description: ISO 4217 currency code or 4-letter crypto/stablecoin symbol.
       example: USD
 
     RateType:

@@ -28,10 +28,10 @@ type ExchangeRate {
     """Time when this record was fetched/observed by the system."""
     fetched_at: Time!
 
-    """Base currency (ISO 4217), e.g. "USD"."""
+    """Base currency (ISO 4217 or 4-letter crypto/stablecoin), e.g. "USD"."""
     base: String!
 
-    """Target currency (ISO 4217), e.g. "VES"."""
+    """Target currency (ISO 4217 or 4-letter crypto/stablecoin), e.g. "VES"."""
     target: String!
 
     """Rate classification (MID/BUY/SELL)."""

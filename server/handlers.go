@@ -305,11 +305,11 @@ func parseSourceAndType(sourceRaw, typeRaw string) (*types.Source, *types.RateTy
 func parseCurrencySymbol(v string) (types.Currency, error) {
 	// TODO use regex?
 	s := strings.ToUpper(strings.TrimSpace(v))
-	if len(s) != 3 {
-		return "", errors.New("invalid currency (must be 3 letters)")
+	if len(s) < 3 || len(s) > 4 {
+		return "", errors.New("invalid currency (must be 3-4 letters)")
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < len(s); i++ {
 		if s[i] < 'A' || s[i] > 'Z' {
 			return "", errors.New("invalid currency (must be A-Z)")
 		}

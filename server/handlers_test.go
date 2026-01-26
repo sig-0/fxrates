@@ -425,10 +425,19 @@ func TestUtils_ParseCurrencySymbol(t *testing.T) {
 		assert.Equal(t, currencies.USD, value)
 	})
 
+	t.Run("valid length 4", func(t *testing.T) {
+		t.Parallel()
+
+		value, err := parseCurrencySymbol(currencies.USDT.String())
+
+		require.NoError(t, err)
+		assert.Equal(t, currencies.USDT, value)
+	})
+
 	t.Run("invalid length", func(t *testing.T) {
 		t.Parallel()
 
-		_, err := parseCurrencySymbol("us")
+		_, err := parseCurrencySymbol("usdtt")
 
 		assert.Error(t, err)
 	})

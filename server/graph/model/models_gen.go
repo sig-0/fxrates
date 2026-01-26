@@ -15,9 +15,9 @@ type ExchangeRate struct {
 	AsOf Time `json:"as_of"`
 	// Time when this record was fetched/observed by the system.
 	FetchedAt Time `json:"fetched_at"`
-	// Base currency (ISO 4217), e.g. "USD".
+	// Base currency (ISO 4217 or 4-letter crypto/stablecoin), e.g. "USD".
 	Base string `json:"base"`
-	// Target currency (ISO 4217), e.g. "VES".
+	// Target currency (ISO 4217 or 4-letter crypto/stablecoin), e.g. "VES".
 	Target string `json:"target"`
 	// Rate classification (MID/BUY/SELL).
 	RateType RateType `json:"rate_type"`

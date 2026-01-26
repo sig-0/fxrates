@@ -18,7 +18,7 @@ var (
 	errInvalidLimit  = errors.New("invalid limit")
 	errInvalidOffset = errors.New("invalid offset")
 	errInvalidType   = errors.New("invalid type")
-	errInvalidCcy    = errors.New("invalid currency (must be 3 letters A-Z)")
+	errInvalidCcy    = errors.New("invalid currency (must be 3-4 letters A-Z)")
 )
 
 func parseAsOf(asOf *model.Time) time.Time {
@@ -89,11 +89,11 @@ func parseSourceAndType(source *string, rt *model.RateType) (*types.Source, *typ
 
 func parseCurrencySymbol(v string) (types.Currency, error) {
 	s := strings.ToUpper(strings.TrimSpace(v))
-	if len(s) != 3 {
+	if len(s) < 3 || len(s) > 4 {
 		return "", errInvalidCcy
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := 0; i < len(s); i++ {
 		if s[i] < 'A' || s[i] > 'Z' {
 			return "", errInvalidCcy
 		}
