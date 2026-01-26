@@ -1,3 +1,4 @@
+//nolint:tagliatelle // Binance API uses snake case
 package ves
 
 import (
@@ -81,12 +82,10 @@ func (p *BinanceP2PProvider) Name() string {
 	return "Binance P2P (USDT)"
 }
 
-// Interval returns how often the provider should fetch.
 func (p *BinanceP2PProvider) Interval() time.Duration {
 	return time.Minute * 10
 }
 
-// Fetch returns BUY and SELL rates for USDT/VES.
 func (p *BinanceP2PProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) {
 	fetchTime := time.Now().UTC()
 
