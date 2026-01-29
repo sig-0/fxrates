@@ -11,5 +11,5 @@ type CurrenciesResponse struct {
 }
 
 type ErrorResponse struct {
-	Error error `json:"error"`
+	Error string `json:"error"`
 }

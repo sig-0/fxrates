@@ -92,7 +92,7 @@ func (s *Server) RatesForPair(w http.ResponseWriter, r *http.Request) {
 
 	page, err := s.storage.RateAsOf(r.Context(), q, asOf)
 	if err != nil {
-		s.logger.Debug(
+		s.logger.Error(
 			"unable to fetch rates",
 			"err", err,
 		)
@@ -164,7 +164,7 @@ func (s *Server) RatesForBase(w http.ResponseWriter, r *http.Request) {
 
 	page, err := s.storage.RateAsOf(r.Context(), q, asOf)
 	if err != nil {
-		s.logger.Debug(
+		s.logger.Error(
 			"unable to fetch rates",
 			"err", err,
 		)
@@ -184,7 +184,7 @@ func (s *Server) RatesForBase(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Sources(w http.ResponseWriter, r *http.Request) {
 	items, err := s.storage.ListSources(r.Context())
 	if err != nil {
-		s.logger.Debug(
+		s.logger.Error(
 			"unable to fetch sources",
 			"err", err,
 		)
@@ -208,7 +208,7 @@ func (s *Server) Sources(w http.ResponseWriter, r *http.Request) {
 func (s *Server) Currencies(w http.ResponseWriter, r *http.Request) {
 	items, err := s.storage.ListCurrencies(r.Context())
 	if err != nil {
-		s.logger.Debug(
+		s.logger.Error(
 			"unable to fetch currencies",
 			"err", err,
 		)
@@ -327,7 +327,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, err error) {
 	resp := &ErrorResponse{
-		Error: err,
+		Error: err.Error(),
 	}
 
 	writeJSON(w, status, resp)

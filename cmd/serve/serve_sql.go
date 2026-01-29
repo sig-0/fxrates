@@ -10,8 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/peterbourgon/ff/v3"
 	"github.com/peterbourgon/ff/v3/ffcli"
@@ -79,23 +78,13 @@ func (c *serveSQLCfg) exec(ctx context.Context, _ []string) error {
 		return fmt.Errorf("missing %s", env.Prefix+env.DBURLSuffix)
 	}
 
-	// Open DB connection
-	pool, err := pgx.Connect(ctx, dsn)
+	// Open DB connection pool
+	pool, err := pgxpool.New(ctx, dsn)
 	if err != nil {
 		return fmt.Errorf("unable to open DB connection: %w", err)
 	}
 
-	defer func() {
-		closeCtx, cancelFn := context.WithTimeout(ctx, time.Second*5)
-		defer cancelFn()
-
-		if err = pool.Close(closeCtx); err != nil {
-			logger.Error(
-				"unable to gracefully close DB connection",
-				"err", err,
-			)
-		}
-	}()
+	defer pool.Close()
 
 	// Check DB reachability
 	pingCtx, cancelPing := context.WithTimeout(ctx, time.Second*5)
