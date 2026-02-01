@@ -126,6 +126,10 @@ func (s *Storage) RateAsOf(
 	}
 
 	sort.Slice(out, func(i, j int) bool {
+		if !out[i].AsOf.Equal(out[j].AsOf) {
+			return out[i].AsOf.After(out[j].AsOf) // descending
+		}
+
 		if out[i].Target != out[j].Target {
 			return out[i].Target.String() < out[j].Target.String()
 		}

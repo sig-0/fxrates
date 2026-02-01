@@ -27,7 +27,7 @@ SELECT
   latest.id, latest.base, latest.target, latest.rate, latest.rate_type, latest.source, latest.as_of, latest.fetched_at,
   COUNT(*) OVER()::bigint AS total
 FROM latest
-ORDER BY target, source, rate_type
+ORDER BY as_of DESC, target, source, rate_type
 LIMIT LEAST($2::int, 500)
 OFFSET $1::bigint
 `

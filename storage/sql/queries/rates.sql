@@ -22,6 +22,6 @@ SELECT
   latest.*,
   COUNT(*) OVER()::bigint AS total
 FROM latest
-ORDER BY target, source, rate_type
+ORDER BY as_of DESC, target, source, rate_type
 LIMIT LEAST(sqlc.arg('limit')::int, 500)
 OFFSET sqlc.arg('offset')::bigint;
