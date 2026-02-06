@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	github.com/99designs/gqlgen v0.17.86
 	github.com/PuerkitoBio/goquery v1.11.0
-	github.com/go-chi/chi/v5 v5.2.4
+	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-chi/httplog/v3 v3.3.0
 	github.com/jackc/pgx/v5 v5.8.0
 	github.com/joho/godotenv v1.5.1
