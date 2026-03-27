@@ -113,7 +113,7 @@ func (p *BCBProvider) fetchForDate(
 
 	entry := apiResp.Value[len(apiResp.Value)-1]
 
-	asOf, err := time.ParseInLocation("2006-01-02 15:04:05.000", entry.DataHoraCotacao, loc)
+	asOf, err := time.ParseInLocation("2006-01-02 15:04:05.999", entry.DataHoraCotacao, loc)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse date %q: %w", entry.DataHoraCotacao, err)
 	}
