@@ -12,6 +12,11 @@ const (
 	CurrencyRUB  Currency = "RUB"
 	CurrencyVES  Currency = "VES"
 	CurrencyUSDT Currency = "USDT"
+	CurrencyCOP  Currency = "COP"
+	CurrencyPEN  Currency = "PEN"
+	CurrencyCLP  Currency = "CLP"
+	CurrencyBRL  Currency = "BRL"
+	CurrencyUSDC Currency = "USDC"
 )
 
 func (c Currency) String() string {
@@ -33,7 +38,13 @@ func (r RateType) String() string {
 type Source string
 
 const (
-	SourceBCV = "BCV" // https://www.bcv.org.ve/
+	SourceBCV      Source = "BCV"      // Banco Central de Venezuela
+	SourceSFC      Source = "SFC"      // Superintendencia Financiera de Colombia
+	SourceBCRP     Source = "BCRP"     // Banco Central de Reserva del Perú
+	SourceBCCH     Source = "BCCH"     // Banco Central de Chile
+	SourceBCB      Source = "BCB"      // Banco Central do Brasil
+	SourceECB      Source = "ECB"      // European Central Bank
+	SourceCoinbase Source = "Coinbase" // Coinbase
 )
 
 func (s Source) String() string {

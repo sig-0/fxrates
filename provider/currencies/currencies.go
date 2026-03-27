@@ -10,4 +10,9 @@ var (
 	RUB  types.Currency = "RUB"
 	VES  types.Currency = "VES"
 	USDT types.Currency = "USDT"
+	COP  types.Currency = "COP"
+	PEN  types.Currency = "PEN"
+	CLP  types.Currency = "CLP"
+	BRL  types.Currency = "BRL"
+	USDC types.Currency = "USDC"
 )
