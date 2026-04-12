@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sig-0/fxrates/provider/currencies"
@@ -16,6 +17,43 @@ import (
 var BCRPSource types.Source = "BCRP"
 
 const bcrpBaseURL = "https://estadisticas.bcrp.gob.pe/estadisticas/series/api"
+
+// bcrpSpanishMonths maps the Spanish month abbreviations used by the BCRP API
+// to their English equivalents so they can be parsed by time.Parse. BCRP uses
+// "Set" for September, which is the common Peruvian abbreviation.
+var bcrpSpanishMonths = map[string]string{
+	"Ene": "Jan",
+	"Feb": "Feb",
+	"Mar": "Mar",
+	"Abr": "Apr",
+	"May": "May",
+	"Jun": "Jun",
+	"Jul": "Jul",
+	"Ago": "Aug",
+	"Set": "Sep",
+	"Sep": "Sep",
+	"Oct": "Oct",
+	"Nov": "Nov",
+	"Dic": "Dec",
+}
+
+// parseBCRPDate parses a date string in the BCRP "DD.Mon.YY" format, where
+// Mon is a Spanish month abbreviation ("07.Abr.26")
+func parseBCRPDate(s string) (time.Time, error) {
+	parts := strings.Split(s, ".")
+	if len(parts) != 3 {
+		return time.Time{}, fmt.Errorf("unexpected date format %q", s)
+	}
+
+	en, ok := bcrpSpanishMonths[parts[1]]
+	if !ok {
+		return time.Time{}, fmt.Errorf("unknown Spanish month %q in date %q", parts[1], s)
+	}
+
+	parts[1] = en
+
+	return time.Parse("02.Jan.06", strings.Join(parts, "."))
+}
 
 // bcrpResponse is the top-level JSON response from the BCRP API.
 type bcrpResponse struct {
@@ -93,8 +131,8 @@ func (p *BCRPProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error)
 		return nil, fmt.Errorf("expected 2 values (buy/sell), got %d", len(period.Values))
 	}
 
-	// Parse the date in DD.Mon.YY format (e.g., "25.Mar.26").
-	asOf, err := time.Parse("02.Jan.06", period.Name)
+	// Parse the date in DD.Mon.YY format with a Spanish month
+	asOf, err := parseBCRPDate(period.Name)
 	if err != nil {
 		return nil, fmt.Errorf("unable to parse date %q: %w", period.Name, err)
 	}

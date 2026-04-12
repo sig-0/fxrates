@@ -58,8 +58,8 @@ func (p *BCBProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) 
 
 	today := time.Now().In(brasilia)
 
-	// Try today first, then yesterday (handles weekends/holidays/before publication).
-	for i := range 2 {
+	// Try today first, then look back up to 4 days to cover weekends and holidays.
+	for i := range 5 {
 		date := today.AddDate(0, 0, -i)
 
 		rates, err := p.fetchForDate(ctx, date, brasilia)
@@ -72,7 +72,7 @@ func (p *BCBProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) 
 		}
 	}
 
-	return nil, fmt.Errorf("no PTAX rates available for today or yesterday")
+	return nil, fmt.Errorf("no PTAX rates available for the last 5 days")
 }
 
 func (p *BCBProvider) fetchForDate(
