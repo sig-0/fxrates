@@ -6,7 +6,7 @@ require (
 	github.com/99designs/gqlgen v0.17.90
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/go-chi/chi/v5 v5.3.0
-	github.com/go-chi/httplog/v3 v3.3.0
+	github.com/go-chi/httplog/v3 v3.4.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
 	github.com/pelletier/go-toml v1.9.5
