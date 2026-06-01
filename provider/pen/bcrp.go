@@ -10,31 +10,31 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
 
-var BCRPSource types.Source = "BCRP"
-
-const bcrpBaseURL = "https://estadisticas.bcrp.gob.pe/estadisticas/series/api"
+const (
+	bcrpBaseURL = "https://estadisticas.bcrp.gob.pe/estadisticas/series/api"
+	bcrpSep     = "Sep"
+)
 
 // bcrpSpanishMonths maps the Spanish month abbreviations used by the BCRP API
 // to their English equivalents so they can be parsed by time.Parse. BCRP uses
 // "Set" for September, which is the common Peruvian abbreviation.
 var bcrpSpanishMonths = map[string]string{
-	"Ene": "Jan",
-	"Feb": "Feb",
-	"Mar": "Mar",
-	"Abr": "Apr",
-	"May": "May",
-	"Jun": "Jun",
-	"Jul": "Jul",
-	"Ago": "Aug",
-	"Set": "Sep",
-	"Sep": "Sep",
-	"Oct": "Oct",
-	"Nov": "Nov",
-	"Dic": "Dec",
+	"Ene":   "Jan",
+	"Feb":   "Feb",
+	"Mar":   "Mar",
+	"Abr":   "Apr",
+	"May":   "May",
+	"Jun":   "Jun",
+	"Jul":   "Jul",
+	"Ago":   "Aug",
+	"Set":   bcrpSep,
+	bcrpSep: bcrpSep,
+	"Oct":   "Oct",
+	"Nov":   "Nov",
+	"Dic":   "Dec",
 }
 
 // parseBCRPDate parses a date string in the BCRP "DD.Mon.YY" format, where
@@ -156,28 +156,28 @@ func (p *BCRPProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error)
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: fetchTime,
-			Base:      currencies.USD,
-			Target:    currencies.PEN,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyPEN,
 			RateType:  types.RateTypeBUY,
-			Source:    BCRPSource,
+			Source:    types.SourceBCRP,
 			Rate:      math.Round(buyRate*1e4) / 1e4,
 		},
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: fetchTime,
-			Base:      currencies.USD,
-			Target:    currencies.PEN,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyPEN,
 			RateType:  types.RateTypeSELL,
-			Source:    BCRPSource,
+			Source:    types.SourceBCRP,
 			Rate:      math.Round(sellRate*1e4) / 1e4,
 		},
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: fetchTime,
-			Base:      currencies.USD,
-			Target:    currencies.PEN,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyPEN,
 			RateType:  types.RateTypeMID,
-			Source:    BCRPSource,
+			Source:    types.SourceBCRP,
 			Rate:      midRate,
 		},
 	}, nil

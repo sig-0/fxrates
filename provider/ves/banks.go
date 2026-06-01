@@ -11,7 +11,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
 
@@ -177,8 +176,8 @@ func (p *BCVBanksProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, er
 			&types.ExchangeRate{
 				AsOf:      r.asOfUTC,
 				FetchedAt: fetchTime,
-				Base:      currencies.USD,
-				Target:    currencies.VES,
+				Base:      types.CurrencyUSD,
+				Target:    types.CurrencyVES,
 				RateType:  types.RateTypeBUY,
 				Source:    src,
 				Rate:      r.buy,
@@ -186,8 +185,8 @@ func (p *BCVBanksProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, er
 			&types.ExchangeRate{
 				AsOf:      r.asOfUTC,
 				FetchedAt: fetchTime,
-				Base:      currencies.USD,
-				Target:    currencies.VES,
+				Base:      types.CurrencyUSD,
+				Target:    types.CurrencyVES,
 				RateType:  types.RateTypeSELL,
 				Source:    src,
 				Rate:      r.sell,

@@ -15,10 +15,12 @@ import (
 
 	"github.com/sig-0/fxrates/storage/mock"
 
-	"github.com/sig-0/fxrates/provider/currencies"
-	"github.com/sig-0/fxrates/provider/ves"
-
 	"github.com/sig-0/fxrates/storage/types"
+)
+
+const (
+	baseParamKey   = "base"
+	targetParamKey = "target"
 )
 
 func TestHandlers_RatesForPair(t *testing.T) {
@@ -48,8 +50,8 @@ func TestHandlers_RatesForPair(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/rates/US/VES", http.NoBody)
 		req = withRouteParams(t, req, map[string]string{
-			"base":   "US",
-			"target": currencies.VES.String(),
+			baseParamKey:   "US",
+			targetParamKey: types.CurrencyVES.String(),
 		})
 
 		w := httptest.NewRecorder()
@@ -79,8 +81,8 @@ func TestHandlers_RatesForPair(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/rates/USD/VES", http.NoBody)
 		req = withRouteParams(t, req, map[string]string{
-			"base":   currencies.USD.String(),
-			"target": currencies.VES.String(),
+			baseParamKey:   types.CurrencyUSD.String(),
+			targetParamKey: types.CurrencyVES.String(),
 		})
 
 		w := httptest.NewRecorder()
@@ -110,8 +112,8 @@ func TestHandlers_RatesForPair(t *testing.T) {
 
 				return &types.Page[*types.ExchangeRate]{
 					Results: []*types.ExchangeRate{{
-						Base:   currencies.USD,
-						Target: currencies.VES,
+						Base:   types.CurrencyUSD,
+						Target: types.CurrencyVES,
 						Rate:   42,
 					}},
 					Total: 1,
@@ -128,8 +130,8 @@ func TestHandlers_RatesForPair(t *testing.T) {
 			"&limit=200&offset=2&source=BCV&type=buy"
 		req := httptest.NewRequest(http.MethodGet, url, http.NoBody)
 		req = withRouteParams(t, req, map[string]string{
-			"base":   currencies.USD.String(),
-			"target": currencies.VES.String(),
+			baseParamKey:   types.CurrencyUSD.String(),
+			targetParamKey: types.CurrencyVES.String(),
 		})
 
 		w := httptest.NewRecorder()
@@ -144,13 +146,13 @@ func TestHandlers_RatesForPair(t *testing.T) {
 		assert.Equal(t, int64(1), page.Total)
 
 		require.NotNil(t, capturedQuery)
-		assert.Equal(t, currencies.USD, capturedQuery.Base)
+		assert.Equal(t, types.CurrencyUSD, capturedQuery.Base)
 
 		require.NotNil(t, capturedQuery.Target)
-		assert.Equal(t, currencies.VES, *capturedQuery.Target)
+		assert.Equal(t, types.CurrencyVES, *capturedQuery.Target)
 
 		require.NotNil(t, capturedQuery.Source)
-		assert.Equal(t, ves.BCVSource, *capturedQuery.Source)
+		assert.Equal(t, types.SourceBCV, *capturedQuery.Source)
 		require.NotNil(t, capturedQuery.RateType)
 
 		assert.Equal(t, types.RateTypeBUY, *capturedQuery.RateType)
@@ -182,7 +184,7 @@ func TestHandlers_RatesForBase(t *testing.T) {
 		}
 
 		req := httptest.NewRequest(http.MethodGet, "/v1/rates/USD", http.NoBody)
-		req = withRouteParams(t, req, map[string]string{"base": currencies.USD.String()})
+		req = withRouteParams(t, req, map[string]string{baseParamKey: types.CurrencyUSD.String()})
 
 		w := httptest.NewRecorder()
 		s.RatesForBase(w, req)
@@ -211,8 +213,8 @@ func TestHandlers_RatesForBase(t *testing.T) {
 
 				return &types.Page[*types.ExchangeRate]{
 					Results: []*types.ExchangeRate{{
-						Base:   currencies.USD,
-						Target: currencies.VES,
+						Base:   types.CurrencyUSD,
+						Target: types.CurrencyVES,
 						Rate:   50,
 					}},
 					Total: 1,
@@ -227,7 +229,7 @@ func TestHandlers_RatesForBase(t *testing.T) {
 
 		url := "/v1/rates/USD?as_of=2026-01-11T00:00:00Z&limit=50&offset=3&type=SELL"
 		req := httptest.NewRequest(http.MethodGet, url, http.NoBody)
-		req = withRouteParams(t, req, map[string]string{"base": currencies.USD.String()})
+		req = withRouteParams(t, req, map[string]string{baseParamKey: types.CurrencyUSD.String()})
 
 		w := httptest.NewRecorder()
 		s.RatesForBase(w, req)
@@ -242,7 +244,7 @@ func TestHandlers_RatesForBase(t *testing.T) {
 
 		require.NotNil(t, capturedQuery)
 
-		assert.Equal(t, currencies.USD, capturedQuery.Base)
+		assert.Equal(t, types.CurrencyUSD, capturedQuery.Base)
 		assert.Nil(t, capturedQuery.Target)
 
 		require.NotNil(t, capturedQuery.RateType)
@@ -270,7 +272,7 @@ func TestHandlers_ListEndpoints(t *testing.T) {
 			handler: func(s *Server, w http.ResponseWriter, r *http.Request) {
 				s.Sources(w, r)
 			},
-			expected: []string{ves.BCVSource.String(), ves.BinanceP2PSource.String()},
+			expected: []string{types.SourceBCV.String(), types.SourceBinanceP2P.String()},
 		},
 		{
 			name: "currencies",
@@ -278,7 +280,7 @@ func TestHandlers_ListEndpoints(t *testing.T) {
 			handler: func(s *Server, w http.ResponseWriter, r *http.Request) {
 				s.Currencies(w, r)
 			},
-			expected: []string{currencies.USD.String(), currencies.VES.String()},
+			expected: []string{types.CurrencyUSD.String(), types.CurrencyVES.String()},
 		},
 	}
 
@@ -392,7 +394,7 @@ func TestUtils_ParseSourceAndType(t *testing.T) {
 		t.Parallel()
 
 		source, rateType, err := parseSourceAndType(
-			ves.BCVSource.String(),
+			types.SourceBCV.String(),
 			"buy",
 		)
 
@@ -400,7 +402,7 @@ func TestUtils_ParseSourceAndType(t *testing.T) {
 		require.NotNil(t, source)
 		require.NotNil(t, rateType)
 
-		assert.Equal(t, ves.BCVSource, *source)
+		assert.Equal(t, types.SourceBCV, *source)
 		assert.Equal(t, types.RateTypeBUY, *rateType)
 	})
 
@@ -419,19 +421,19 @@ func TestUtils_ParseCurrencySymbol(t *testing.T) {
 	t.Run("valid", func(t *testing.T) {
 		t.Parallel()
 
-		value, err := parseCurrencySymbol(currencies.USD.String())
+		value, err := parseCurrencySymbol(types.CurrencyUSD.String())
 
 		require.NoError(t, err)
-		assert.Equal(t, currencies.USD, value)
+		assert.Equal(t, types.CurrencyUSD, value)
 	})
 
 	t.Run("valid length 4", func(t *testing.T) {
 		t.Parallel()
 
-		value, err := parseCurrencySymbol(currencies.USDT.String())
+		value, err := parseCurrencySymbol(types.CurrencyUSDT.String())
 
 		require.NoError(t, err)
-		assert.Equal(t, currencies.USDT, value)
+		assert.Equal(t, types.CurrencyUSDT, value)
 	})
 
 	t.Run("invalid length", func(t *testing.T) {

@@ -13,13 +13,10 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
 
 var errInvalidRate = errors.New("invalid rate")
-
-var BCVSource types.Source = "BCV"
 
 // BCVProvider is the BCV website scraping provider
 type BCVProvider struct {
@@ -131,9 +128,9 @@ func (p *BCVProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) 
 			AsOf:      effectiveDate,
 			FetchedAt: fetchTime,
 			Base:      idToCurrency(id),
-			Target:    currencies.VES,
+			Target:    types.CurrencyVES,
 			RateType:  types.RateTypeMID,
-			Source:    BCVSource,
+			Source:    types.SourceBCV,
 			Rate:      rate,
 		}
 
@@ -255,15 +252,15 @@ func parseBCVDate(s string) (time.Time, error) {
 func idToCurrency(id string) types.Currency {
 	switch id {
 	case "dolar":
-		return currencies.USD
+		return types.CurrencyUSD
 	case "euro":
-		return currencies.EUR
+		return types.CurrencyEUR
 	case "yuan":
-		return currencies.CNY
+		return types.CurrencyCNY
 	case "lira":
-		return currencies.TRY
+		return types.CurrencyTRY
 	case "rublo":
-		return currencies.RUB
+		return types.CurrencyRUB
 	default:
 		return "XXX"
 	}

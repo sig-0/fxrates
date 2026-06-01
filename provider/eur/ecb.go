@@ -9,11 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
-
-var ECBSource types.Source = "ECB"
 
 const ecbURL = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml"
 
@@ -107,10 +104,10 @@ func (p *ECBProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) 
 			{
 				AsOf:      asOf.UTC(),
 				FetchedAt: time.Now().UTC(),
-				Base:      currencies.USD,
-				Target:    currencies.EUR,
+				Base:      types.CurrencyUSD,
+				Target:    types.CurrencyEUR,
 				RateType:  types.RateTypeMID,
-				Source:    ECBSource,
+				Source:    types.SourceECB,
 				Rate:      math.Round(usdToEUR*1e4) / 1e4,
 			},
 		}, nil

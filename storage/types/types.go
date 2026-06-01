@@ -17,6 +17,7 @@ const (
 	CurrencyCLP  Currency = "CLP"
 	CurrencyBRL  Currency = "BRL"
 	CurrencyUSDC Currency = "USDC"
+	CurrencyARS  Currency = "ARS"
 )
 
 func (c Currency) String() string {
@@ -45,6 +46,14 @@ const (
 	SourceBCB      Source = "BCB"      // Banco Central do Brasil
 	SourceECB      Source = "ECB"      // European Central Bank
 	SourceCoinbase Source = "Coinbase" // Coinbase
+
+	SourceBCRA            Source = "BCRA"            // Banco Central de la República Argentina
+	SourceBNA             Source = "BNA"             // Banco de la Nación Argentina
+	SourceBinanceP2P      Source = "BinanceP2P"      // Binance P2P marketplace
+	SourceDolarAPIBlue    Source = "DolarAPIBlue"    // DolarAPI Blue (informal) rate
+	SourceDolarAPIMEP     Source = "DolarAPIMEP"     // DolarAPI MEP (bolsa) rate
+	SourceDolarAPICCL     Source = "DolarAPICCL"     // DolarAPI Contado con Liquidación rate
+	SourceDolarAPITarjeta Source = "DolarAPITarjeta" // DolarAPI Tarjeta (turista) rate
 )
 
 func (s Source) String() string {

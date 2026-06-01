@@ -13,8 +13,6 @@ import (
 
 	"github.com/sig-0/fxrates/storage/mock"
 
-	"github.com/sig-0/fxrates/provider/currencies"
-
 	"github.com/sig-0/fxrates/storage/types"
 )
 
@@ -205,8 +203,8 @@ func TestOrchestrator_Start(t *testing.T) {
 			saveDone  = make(chan struct{})
 
 			expectedRate = &types.ExchangeRate{
-				Base:     currencies.USD,
-				Target:   currencies.VES,
+				Base:     types.CurrencyUSD,
+				Target:   types.CurrencyVES,
 				Rate:     100.0,
 				RateType: types.RateTypeMID,
 				Source:   "test",
@@ -296,8 +294,8 @@ func TestOrchestrator_Start(t *testing.T) {
 					}
 
 					return []*types.ExchangeRate{{
-						Base:   currencies.USD,
-						Target: currencies.VES,
+						Base:   types.CurrencyUSD,
+						Target: types.CurrencyVES,
 						Rate:   100.0,
 					}}, nil
 				},
@@ -407,8 +405,8 @@ func TestOrchestrator_Start(t *testing.T) {
 					},
 					fetchFn: func(_ context.Context) ([]*types.ExchangeRate, error) {
 						return []*types.ExchangeRate{{
-							Base:   currencies.USD,
-							Target: currencies.VES,
+							Base:   types.CurrencyUSD,
+							Target: types.CurrencyVES,
 							Rate:   100.0,
 							Source: "source-1",
 						}}, nil
@@ -423,8 +421,8 @@ func TestOrchestrator_Start(t *testing.T) {
 					},
 					fetchFn: func(_ context.Context) ([]*types.ExchangeRate, error) {
 						return []*types.ExchangeRate{{
-							Base:   currencies.EUR,
-							Target: currencies.VES,
+							Base:   types.CurrencyEUR,
+							Target: types.CurrencyVES,
 							Rate:   110.0,
 							Source: "source-2",
 						}}, nil
@@ -488,8 +486,8 @@ func TestOrchestrator_Start(t *testing.T) {
 				},
 				fetchFn: func(_ context.Context) ([]*types.ExchangeRate, error) {
 					return []*types.ExchangeRate{{
-						Base:   currencies.USD,
-						Target: currencies.VES,
+						Base:   types.CurrencyUSD,
+						Target: types.CurrencyVES,
 						Rate:   100.0,
 					}}, nil
 				},

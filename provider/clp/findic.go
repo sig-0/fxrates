@@ -8,11 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
-
-var BCCHSource types.Source = "BCCH"
 
 const findicURL = "https://findic.cl/api/dolar"
 
@@ -88,10 +85,10 @@ func (p *FindicProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, erro
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: time.Now().UTC(),
-			Base:      currencies.USD,
-			Target:    currencies.CLP,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyCLP,
 			RateType:  types.RateTypeMID,
-			Source:    BCCHSource,
+			Source:    types.SourceBCCH,
 			Rate:      math.Round(entry.Valor*1e4) / 1e4,
 		},
 	}, nil

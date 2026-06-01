@@ -1,5 +1,4 @@
-//nolint:tagliatelle // Binance API uses snake case
-package ves
+package crypto
 
 import (
 	"bytes"
@@ -12,15 +11,44 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
 
-var BinanceP2PSource types.Source = "BinanceP2P"
-
 const binanceP2PURL = "https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search"
 
-// binanceP2PRequest is the request body for the Binance P2P API
+type BinanceP2PConfig struct {
+	Asset    types.Currency
+	Fiat     types.Currency
+	Source   types.Source
+	Name     string
+	Interval time.Duration
+	Timeout  time.Duration
+	Filter   BinanceP2PFilterOpts
+}
+
+type BinanceP2PFilterOpts struct {
+	MinOrders        int
+	MinFinishRate    float64
+	MinAvailable     float64
+	TypicalAmount    float64
+	RelaxedMinOrders int
+	RelaxedMinFinish float64
+	TopN             int
+}
+
+func DefaultBinanceP2PFilter() BinanceP2PFilterOpts {
+	return BinanceP2PFilterOpts{
+		MinOrders:        50,
+		MinFinishRate:    0.95,
+		MinAvailable:     50,
+		TypicalAmount:    100,
+		RelaxedMinOrders: 20,
+		RelaxedMinFinish: 0.90,
+		TopN:             12,
+	}
+}
+
+//nolint:tagliatelle // Binance API uses camelCase.
 type binanceP2PRequest struct {
 	Asset     types.Currency `json:"asset"`
 	Fiat      types.Currency `json:"fiat"`
@@ -29,7 +57,6 @@ type binanceP2PRequest struct {
 	Page      int            `json:"page"`
 }
 
-// binanceP2PResponse is the response from the Binance P2P API
 type binanceP2PResponse struct {
 	Data []binanceP2POffer `json:"data"`
 }
@@ -39,6 +66,7 @@ type binanceP2POffer struct {
 	Advertiser binanceP2PAdvertiser `json:"advertiser"`
 }
 
+//nolint:tagliatelle // Binance API uses camelCase.
 type binanceP2PAdv struct {
 	Price                string `json:"price"`
 	MinSingleTransAmount string `json:"minSingleTransAmount"`
@@ -47,55 +75,51 @@ type binanceP2PAdv struct {
 	TradableQuantity     string `json:"tradableQuantity"`
 }
 
+//nolint:tagliatelle // Binance API uses camelCase.
 type binanceP2PAdvertiser struct {
 	MonthOrderCount int     `json:"monthOrderCount"`
 	MonthFinishRate float64 `json:"monthFinishRate"`
 }
 
-type binanceOffer struct {
-	price      float64
-	minLimit   float64
-	maxLimit   float64
-	available  float64
-	orders     int
-	finishRate float64
-	quality    float64
-}
-
-// BinanceP2PProvider fetches USDT/VES rates from Binance P2P
 type BinanceP2PProvider struct {
 	client *http.Client
 	url    string
+	cfg    BinanceP2PConfig
+	filter BinanceP2PFilterOpts
 }
 
-// NewBinanceP2PProvider creates a new instance of the Binance P2P provider
-func NewBinanceP2PProvider(timeout time.Duration) *BinanceP2PProvider {
+func NewBinanceP2P(cfg BinanceP2PConfig) *BinanceP2PProvider {
+	filter := cfg.Filter
+	if filter == (BinanceP2PFilterOpts{}) {
+		filter = DefaultBinanceP2PFilter()
+	}
+
 	return &BinanceP2PProvider{
 		client: &http.Client{
-			Timeout: timeout,
+			Timeout: cfg.Timeout,
 		},
-		url: binanceP2PURL,
+		cfg:    cfg,
+		url:    binanceP2PURL,
+		filter: filter,
 	}
 }
 
 func (p *BinanceP2PProvider) Name() string {
-	return "Binance P2P (USDT)"
+	return p.cfg.Name
 }
 
 func (p *BinanceP2PProvider) Interval() time.Duration {
-	return time.Minute * 10
+	return p.cfg.Interval
 }
 
 func (p *BinanceP2PProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) {
 	fetchTime := time.Now().UTC()
 
-	// Fetch the buy price
 	buyPrice, err := p.fetchMedianPrice(ctx, types.RateTypeBUY)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch BUY price: %w", err)
 	}
 
-	// Fetch the sell price
 	sellPrice, err := p.fetchMedianPrice(ctx, types.RateTypeSELL)
 	if err != nil {
 		return nil, fmt.Errorf("unable to fetch SELL price: %w", err)
@@ -105,59 +129,54 @@ func (p *BinanceP2PProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, 
 		{
 			AsOf:      fetchTime,
 			FetchedAt: fetchTime,
-			Base:      currencies.USDT,
-			Target:    currencies.VES,
+			Base:      p.cfg.Asset,
+			Target:    p.cfg.Fiat,
 			RateType:  types.RateTypeBUY,
-			Source:    BinanceP2PSource,
+			Source:    p.cfg.Source,
 			Rate:      buyPrice,
 		},
 		{
 			AsOf:      fetchTime,
 			FetchedAt: fetchTime,
-			Base:      currencies.USDT,
-			Target:    currencies.VES,
+			Base:      p.cfg.Asset,
+			Target:    p.cfg.Fiat,
 			RateType:  types.RateTypeSELL,
-			Source:    BinanceP2PSource,
+			Source:    p.cfg.Source,
 			Rate:      sellPrice,
 		},
 	}, nil
 }
 
-// fetchMedianPrice fetches offers and returns the median price
 func (p *BinanceP2PProvider) fetchMedianPrice(
 	ctx context.Context,
 	tradeType types.RateType,
 ) (float64, error) {
-	// Fetch the seemingly best offers
 	offers, err := p.fetchOffers(ctx, tradeType)
 	if err != nil {
 		return 0, err
 	}
 
-	// Filter out the very best for the median
-	filtered := filterOffers(
+	filtered := filterBinanceOffers(
 		offers,
-		50,
-		0.95,
-		50,
-		100,
+		p.filter.MinOrders,
+		p.filter.MinFinishRate,
+		p.filter.MinAvailable,
+		p.filter.TypicalAmount,
 	)
 
-	if len(filtered) < 12 {
-		// Filter with relaxed criteria
-		if relaxed := filterOffers(
+	if len(filtered) < p.filter.TopN {
+		if relaxed := filterBinanceOffers(
 			offers,
-			20,
-			0.90,
-			50,
-			100,
+			p.filter.RelaxedMinOrders,
+			p.filter.RelaxedMinFinish,
+			p.filter.MinAvailable,
+			p.filter.TypicalAmount,
 		); len(relaxed) > len(filtered) {
 			filtered = relaxed
 		}
 	}
 
 	if len(filtered) == 0 {
-		// Fallback, use all offers as none match criteria
 		filtered = offers
 	}
 
@@ -173,8 +192,8 @@ func (p *BinanceP2PProvider) fetchMedianPrice(
 		return filtered[i].quality > filtered[j].quality
 	})
 
-	if len(filtered) > 12 {
-		filtered = filtered[:12]
+	if p.filter.TopN > 0 && len(filtered) > p.filter.TopN {
+		filtered = filtered[:p.filter.TopN]
 	}
 
 	prices := make([]float64, len(filtered))
@@ -186,10 +205,9 @@ func (p *BinanceP2PProvider) fetchMedianPrice(
 		return 0, fmt.Errorf("no valid prices found for %s", tradeType)
 	}
 
-	return math.Round(median(prices)*1e4) / 1e4, nil
+	return math.Round(binanceMedian(prices)*1e4) / 1e4, nil
 }
 
-// fetchOffers queries Binance P2P and parses offers
 func (p *BinanceP2PProvider) fetchOffers(
 	ctx context.Context,
 	tradeType types.RateType,
@@ -198,8 +216,8 @@ func (p *BinanceP2PProvider) fetchOffers(
 
 	for page := 1; page <= 3; page++ {
 		reqBody := binanceP2PRequest{
-			Asset:     currencies.USDT,
-			Fiat:      currencies.VES,
+			Asset:     p.cfg.Asset,
+			Fiat:      p.cfg.Fiat,
 			TradeType: tradeType,
 			Rows:      10,
 			Page:      page,
@@ -242,23 +260,23 @@ func (p *BinanceP2PProvider) fetchOffers(
 		}
 
 		for _, offer := range apiResp.Data {
-			price, ok := parseFloat(offer.Adv.Price)
+			price, ok := binanceParseFloat(offer.Adv.Price)
 			if !ok {
 				continue
 			}
 
 			var (
-				minLimit, _ = parseFloat(offer.Adv.MinSingleTransAmount)
-				maxLimit, _ = parseFloat(offer.Adv.MaxSingleTransAmount)
+				minLimit, _ = binanceParseFloat(offer.Adv.MinSingleTransAmount)
+				maxLimit, _ = binanceParseFloat(offer.Adv.MaxSingleTransAmount)
 			)
 
-			available, ok := parseFloat(offer.Adv.SurplusAmount)
+			available, ok := binanceParseFloat(offer.Adv.SurplusAmount)
 			if !ok {
-				available, _ = parseFloat(offer.Adv.TradableQuantity)
+				available, _ = binanceParseFloat(offer.Adv.TradableQuantity)
 			}
 
 			var (
-				finishRate = normalizeFinishRate(offer.Advertiser.MonthFinishRate)
+				finishRate = binanceNormalizeFinishRate(offer.Advertiser.MonthFinishRate)
 				orders     = offer.Advertiser.MonthOrderCount
 			)
 
@@ -269,7 +287,7 @@ func (p *BinanceP2PProvider) fetchOffers(
 				available:  available,
 				orders:     orders,
 				finishRate: finishRate,
-				quality:    wilsonLowerBound(finishRate, orders),
+				quality:    binanceWilsonLowerBound(finishRate, orders),
 			})
 		}
 	}
@@ -281,8 +299,17 @@ func (p *BinanceP2PProvider) fetchOffers(
 	return offers, nil
 }
 
-// filterOffers applies quality and limit thresholds
-func filterOffers(
+type binanceOffer struct {
+	price      float64
+	minLimit   float64
+	maxLimit   float64
+	available  float64
+	orders     int
+	finishRate float64
+	quality    float64
+}
+
+func filterBinanceOffers(
 	offers []binanceOffer,
 	minOrders int,
 	minFinish float64,
@@ -320,8 +347,7 @@ func filterOffers(
 	return filtered
 }
 
-// normalizeFinishRate ensures finish rate is 0-1
-func normalizeFinishRate(rate float64) float64 {
+func binanceNormalizeFinishRate(rate float64) float64 {
 	if rate <= 0 {
 		return 0
 	}
@@ -333,8 +359,7 @@ func normalizeFinishRate(rate float64) float64 {
 	return rate
 }
 
-// wilsonLowerBound returns a conservative completion score
-func wilsonLowerBound(rate float64, n int) float64 {
+func binanceWilsonLowerBound(rate float64, n int) float64 {
 	if n <= 0 {
 		return 0
 	}
@@ -349,8 +374,7 @@ func wilsonLowerBound(rate float64, n int) float64 {
 	return (center - adjust) / denominator
 }
 
-// parseFloat parses a float string into a value
-func parseFloat(value string) (float64, bool) {
+func binanceParseFloat(value string) (float64, bool) {
 	if value == "" {
 		return 0, false
 	}
@@ -363,8 +387,7 @@ func parseFloat(value string) (float64, bool) {
 	return parsed, true
 }
 
-// median calculates the median of a slice of float64 values
-func median(values []float64) float64 {
+func binanceMedian(values []float64) float64 {
 	sort.Float64s(values)
 
 	n := len(values)

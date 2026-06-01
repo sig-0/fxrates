@@ -25,28 +25,8 @@
 // Returns BUY and SELL rates for each bank. Only the most recent
 // date's rates are returned (must be within 7 days).
 //
-// ## Binance P2P (USDT)
+// ## Binance P2P (USDT/VES)
 //
-// Source: "BinanceP2P"
-// API: https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search
-// Interval: 10 minutes
-//
-// Fetches peer-to-peer USDT/VES rates from Binance.
-// Returns BUY and SELL rates calculated as the median of filtered offers.
-//
-// Offer collection:
-//   - Fetches up to 30 offers (3 pages of 10)
-//   - Parses price, limits, availability, and advertiser metrics
-//
-// Offer filtering (strict, then relaxed if needed):
-//   - Minimum 50 monthly orders (relaxed: 20)
-//   - Minimum 95% completion rate (relaxed: 90%)
-//   - Minimum 50 USDT available
-//   - Typical transaction amount of 100 USDT must be within limits
-//
-// Quality scoring uses Wilson lower bound on completion rate to favor
-// advertisers with both high completion rates and sufficient order volume.
-//
-// Final rate is the median of the top 12 offers sorted by price
-// (ascending for BUY, descending for SELL), with quality as tiebreaker.
+// Implemented by the shared provider/crypto package (NewBinanceP2P) and
+// instantiated for USDT/VES in cmd/serve/providers.go.
 package ves

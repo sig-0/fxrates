@@ -9,11 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
-
-var CoinbaseSource types.Source = "Coinbase"
 
 const coinbaseUSDCURL = "https://api.coinbase.com/v2/prices/USDC-USD/spot"
 
@@ -86,10 +83,10 @@ func (p *CoinbaseUSDCProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate
 		{
 			AsOf:      fetchTime,
 			FetchedAt: fetchTime,
-			Base:      currencies.USDC,
-			Target:    currencies.USD,
+			Base:      types.CurrencyUSDC,
+			Target:    types.CurrencyUSD,
 			RateType:  types.RateTypeMID,
-			Source:    CoinbaseSource,
+			Source:    types.SourceCoinbase,
 			Rate:      math.Round(rate*1e4) / 1e4,
 		},
 	}, nil

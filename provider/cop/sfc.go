@@ -9,11 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
-
-var SFCSource types.Source = "SFC"
 
 const sfcURL = "https://www.datos.gov.co/resource/32sa-8pi3.json?$order=vigenciadesde%20DESC&$limit=1"
 
@@ -89,10 +86,10 @@ func (p *SFCProvider) Fetch(ctx context.Context) ([]*types.ExchangeRate, error) 
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: time.Now().UTC(),
-			Base:      currencies.USD,
-			Target:    currencies.COP,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyCOP,
 			RateType:  types.RateTypeMID,
-			Source:    SFCSource,
+			Source:    types.SourceSFC,
 			Rate:      math.Round(rate*1e4) / 1e4,
 		},
 	}, nil

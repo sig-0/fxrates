@@ -8,11 +8,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sig-0/fxrates/provider/currencies"
 	"github.com/sig-0/fxrates/storage/types"
 )
-
-var BCBSource types.Source = "BCB"
 
 const bcbBaseURL = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata"
 
@@ -127,28 +124,28 @@ func (p *BCBProvider) fetchForDate(
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: fetchTime,
-			Base:      currencies.USD,
-			Target:    currencies.BRL,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyBRL,
 			RateType:  types.RateTypeBUY,
-			Source:    BCBSource,
+			Source:    types.SourceBCB,
 			Rate:      math.Round(entry.CotacaoCompra*1e4) / 1e4,
 		},
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: fetchTime,
-			Base:      currencies.USD,
-			Target:    currencies.BRL,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyBRL,
 			RateType:  types.RateTypeSELL,
-			Source:    BCBSource,
+			Source:    types.SourceBCB,
 			Rate:      math.Round(entry.CotacaoVenda*1e4) / 1e4,
 		},
 		{
 			AsOf:      asOf.UTC(),
 			FetchedAt: fetchTime,
-			Base:      currencies.USD,
-			Target:    currencies.BRL,
+			Base:      types.CurrencyUSD,
+			Target:    types.CurrencyBRL,
 			RateType:  types.RateTypeMID,
-			Source:    BCBSource,
+			Source:    types.SourceBCB,
 			Rate:      midRate,
 		},
 	}, nil
